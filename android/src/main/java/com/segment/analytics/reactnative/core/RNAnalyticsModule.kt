@@ -24,10 +24,7 @@
 
 package com.segment.analytics.reactnative.core
 
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
-import com.facebook.react.bridge.ReactMethod
-import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.*
 import com.segment.analytics.Analytics
 import com.segment.analytics.Properties
 import com.segment.analytics.Traits
@@ -35,13 +32,28 @@ import com.segment.analytics.ValueMap
 import java.util.concurrent.TimeUnit
 
 class RNAnalyticsModule(context: ReactApplicationContext): ReactContextBaseJavaModule(context) {
+    override fun getName() = "RNAnalytics"
+
     private val analytics
         get() = Analytics.with(reactApplicationContext)
 
-    override fun getName() = "RNAnalytics"
+    companion object {
+        private var singletonJsonConfig: String? = null
+    }
 
     @ReactMethod
-    fun setup(options: ReadableMap) {
+    fun setup(options: ReadableMap, promise: Promise) {
+        val json = options.getString("json")
+
+        if(singletonJsonConfig != null) {
+            if(json == singletonJsonConfig) {
+                return promise.resolve(null)
+            }
+            else {
+                return promise.reject("E_SEGMENT_RECONFIGURED", "Duplicate Analytics client")
+            }
+        }
+
         val builder = Analytics
                 .Builder(reactApplicationContext, options.getString("writeKey"))
                 .flushQueueSize(options.getInt("flushAt"))
@@ -69,17 +81,16 @@ class RNAnalyticsModule(context: ReactApplicationContext): ReactContextBaseJavaM
             builder.logLevel(Analytics.LogLevel.VERBOSE)
         }
 
-        Analytics.setSingletonInstance(
-           // TMP: fix for android duplicate on-refresh issue.
-           // FROM here: https://github.com/segmentio/analytics-react-native/issues/16
-           // REMOVE this custom module when this PR lands:
-           // https://github.com/segmentio/analytics-react-native/commit/e406197f6241e4311bf8fd533d995923c79eb310
-           try {
-            RNAnalytics.buildWithIntegrations(builder)
-           } catch(e: Exception) {
-               // Ignore
-           }
-        )
+        try {
+            Analytics.setSingletonInstance(
+                RNAnalytics.buildWithIntegrations(builder)
+            )
+        } catch(e: Exception) {
+            return promise.reject("E_SEGMENT_ERROR", e)
+        }
+
+        singletonJsonConfig = json
+        promise.resolve(null)
     }
 
     @ReactMethod
