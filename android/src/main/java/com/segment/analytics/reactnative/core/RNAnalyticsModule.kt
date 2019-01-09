@@ -70,10 +70,6 @@ class RNAnalyticsModule(context: ReactApplicationContext): ReactContextBaseJavaM
         }
 
         Analytics.setSingletonInstance(
-           // TMP: fix for android duplicate on-refresh issue.
-           // FROM here: https://github.com/segmentio/analytics-react-native/issues/16
-           // REMOVE this custom module when this PR lands:
-           // https://github.com/segmentio/analytics-react-native/commit/e406197f6241e4311bf8fd533d995923c79eb310
            try {
             RNAnalytics.buildWithIntegrations(builder)
            } catch(e: Exception) {
