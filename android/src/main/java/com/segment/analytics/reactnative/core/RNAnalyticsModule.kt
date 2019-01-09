@@ -24,7 +24,10 @@
 
 package com.segment.analytics.reactnative.core
 
-import com.facebook.react.bridge.*
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactContextBaseJavaModule
+import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.ReadableMap
 import com.segment.analytics.Analytics
 import com.segment.analytics.Properties
 import com.segment.analytics.Traits
@@ -32,28 +35,13 @@ import com.segment.analytics.ValueMap
 import java.util.concurrent.TimeUnit
 
 class RNAnalyticsModule(context: ReactApplicationContext): ReactContextBaseJavaModule(context) {
-    override fun getName() = "RNAnalytics"
-
     private val analytics
         get() = Analytics.with(reactApplicationContext)
 
-    companion object {
-        private var singletonJsonConfig: String? = null
-    }
+    override fun getName() = "RNAnalytics"
 
     @ReactMethod
-    fun setup(options: ReadableMap, promise: Promise) {
-        val json = options.getString("json")
-
-        if(singletonJsonConfig != null) {
-            if(json == singletonJsonConfig) {
-                return promise.resolve(null)
-            }
-            else {
-                return promise.reject("E_SEGMENT_RECONFIGURED", "Duplicate Analytics client")
-            }
-        }
-
+    fun setup(options: ReadableMap) {
         val builder = Analytics
                 .Builder(reactApplicationContext, options.getString("writeKey"))
                 .flushQueueSize(options.getInt("flushAt"))
@@ -81,16 +69,9 @@ class RNAnalyticsModule(context: ReactApplicationContext): ReactContextBaseJavaM
             builder.logLevel(Analytics.LogLevel.VERBOSE)
         }
 
-        try {
-            Analytics.setSingletonInstance(
-                RNAnalytics.buildWithIntegrations(builder)
-            )
-        } catch(e: Exception) {
-            return promise.reject("E_SEGMENT_ERROR", e)
-        }
-
-        singletonJsonConfig = json
-        promise.resolve(null)
+        Analytics.setSingletonInstance(
+          RNAnalytics.buildWithIntegrations(builder)
+        )
     }
 
     @ReactMethod
