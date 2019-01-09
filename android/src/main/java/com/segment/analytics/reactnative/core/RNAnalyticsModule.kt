@@ -68,13 +68,13 @@ class RNAnalyticsModule(context: ReactApplicationContext): ReactContextBaseJavaM
         if(options.getBoolean("debug")) {
             builder.logLevel(Analytics.LogLevel.VERBOSE)
         }
-
-        Analytics.setSingletonInstance(
-           try {
-            RNAnalytics.buildWithIntegrations(builder)
-           } catch (e: Exception) {
-           }
-        )
+        
+        try {
+            Analytics.setSingletonInstance(
+                RNAnalytics.buildWithIntegrations(builder)
+            )
+        } catch (e: Exception) {
+        }
     }
 
     @ReactMethod
