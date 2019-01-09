@@ -70,7 +70,7 @@ class RNAnalyticsModule(context: ReactApplicationContext): ReactContextBaseJavaM
         }
 
         Analytics.setSingletonInstance(
-          RNAnalytics.buildWithIntegrations(builder)
+            RNAnalytics.buildWithIntegrations(builder)
         )
     }
 
